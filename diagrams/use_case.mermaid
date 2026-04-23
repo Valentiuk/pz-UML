@@ -1,0 +1,50 @@
+useCaseDiagram
+    actor Водій as Driver
+    actor "Резидент (Абонемент)" as VIP
+    actor Гість as Guest
+    VIP --|> Driver
+    Guest --|> Driver
+
+    actor Оператор as Admin
+    actor "LPR Камера" as Camera
+    actor "Платіжний шлюз" as Bank
+    actor "База МВС" as Police
+
+    package "Smart Parking System (Core)" {
+        usecase "Реєстрація в'їзду" as Enter
+        usecase "Розпізнавання номера (OCR)" as CheckPlate
+        usecase "Видача паркувального талона" as GetTicket
+        usecase "Перевірка авто в розшуку" as CheckStolen
+        usecase "Оплата послуг" as Pay
+        usecase "Безготівкова транзакція" as CardPay
+        usecase "Готівкова транзакція" as CashPay
+        usecase "Виїзд з паркінгу" as Exit
+        usecase "Моніторинг вільних місць" as Monitor
+        usecase "Керування тарифами" as Tariffs
+        usecase "Ручне відкриття шлагбаума" as ManualGate
+    }
+
+    %% Зв'язки Водія
+    Driver --> Enter
+    Driver --> Pay
+    Driver --> Exit
+
+    %% Зв'язки Адміна
+    Admin --> Monitor
+    Admin --> Tariffs
+    Admin --> ManualGate
+
+    %% Відношення між прецедентами
+    Enter ..> CheckPlate : <<include>>
+    CheckPlate ..> CheckStolen : <<extend>>
+    Pay ..> CardPay : <<include>>
+    Pay ..> CashPay : <<extend>>
+    
+    %% Специфіка гостей
+    Guest --> GetTicket
+    GetTicket ..> Enter : <<extend>>
+
+    %% Зовнішні системи
+    Camera --> CheckPlate
+    Police --> CheckStolen
+    Bank --> CardPay

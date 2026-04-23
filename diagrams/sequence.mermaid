@@ -1,0 +1,57 @@
+sequenceDiagram
+    autonumber
+    actor Car as Автомобіль
+    participant InCam as Камера В'їзду
+    participant Backend as Сервер Паркінгу
+    participant DB as База Даних
+    participant Gate as Шлагбаум
+    participant POS as Термінал Оплати
+    participant Bank as Платіжна Система
+
+    rect rgb(235, 245, 255)
+    note right of Car: ФАЗА 1: В'їзд на територію
+    Car->>InCam: Під'їзд до стоп-лінії
+    InCam->>InCam: Розпізнавання номера (OCR)
+    InCam->>Backend: Передача номера (AA1111BB)
+    Backend->>DB: Запит наявності броні/абонемента
+    DB-->>Backend: Відповідь (Статус: Гість)
+    Backend->>DB: Створення сесії паркування (Час IN)
+    Backend->>Gate: Команда: Відкрити
+    Gate-->>Car: Шлагбаум відкрито
+    Car->>Gate: Проїзд (перетин магнітної петлі)
+    Gate->>Backend: Сигнал: Авто проїхало
+    Backend->>Gate: Команда: Закрити
+    end
+
+    note right of Car: ... Перебування на паркінгу ...
+
+    rect rgb(255, 245, 235)
+    note right of Car: ФАЗА 2: Процес розрахунку
+    Car->>POS: Введення номера авто на екрані
+    POS->>Backend: Запит суми до сплати
+    Backend->>DB: Розрахунок часу (OUT мінус IN)
+    DB-->>Backend: Тривалість: 2 год (120 грн)
+    Backend-->>POS: До сплати: 120 грн
+    Car->>POS: Прикладання картки (NFC)
+    POS->>Bank: Ініціалізація транзакції
+    
+    alt Успішна оплата
+        Bank-->>POS: Схвалено (Код 200)
+        POS->>Backend: Статус: Оплачено
+        Backend->>DB: Оновлення статусу сесії (Paid)
+        POS-->>Car: Видача фіскального чеку
+    else Недостатньо коштів
+        Bank-->>POS: Відхилено (Код 402)
+        POS-->>Car: Помилка: Спробуйте іншу картку
+    end
+    end
+
+    rect rgb(235, 255, 235)
+    note right of Car: ФАЗА 3: Виїзд
+    Car->>InCam: Під'їзд до камери виїзду
+    InCam->>Backend: Передача номера
+    Backend->>DB: Перевірка статусу оплати
+    DB-->>Backend: Оплачено (Грейс-період 15 хв діє)
+    Backend->>Gate: Відкрити
+    Gate-->>Car: Щасливої дороги!
+    end
